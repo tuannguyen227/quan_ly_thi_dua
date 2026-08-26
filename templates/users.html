@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Tài Khoản</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { width: 260px; height: 100vh; position: fixed; top: 0; left: 0; background-color: #004080; color: white; padding-top: 20px; z-index: 1000; overflow-y: auto; }
+        .sidebar h4 { font-size: 18px; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #0054a6; }
+        .sidebar .nav-link { color: #cce6ff; font-weight: 600; padding: 12px 20px; font-size: 14px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background-color: #002244; color: white; border-left: 4px solid #4da6ff; }
+        .main-content { margin-left: 260px; padding: 30px; }
+        .card { border-radius: 10px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        /* Khung bọc bảng có thanh cuộn và giới hạn chiều cao */
+		.table-container { max-height: calc(100vh - 250px); overflow-y: auto; }
+		/* Khóa dòng tiêu đề trên cùng */
+		.table thead th { position: sticky; top: 0; z-index: 10; background-color: #004080 !important; color: white; text-align: center; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.4); }
+        .table td { vertical-align: middle; text-align: center; }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    {% include 'sidebar.html' %}
+
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+            <h4 class="m-0 fw-bold text-primary"><i class="fa-solid fa-users-gear me-2"></i> Quản trị Tài khoản Hệ thống</h4>
+            
+            <div>
+                <!-- NÚT TẠO TK GVCN -->
+                <form action="/auto_generate_gvcn" method="POST" class="d-inline me-2" onsubmit="return confirm('Hệ thống sẽ dựa vào danh sách Chi đoàn để tạo hàng loạt tài khoản GVCN.\n\nTên đăng nhập và Mật khẩu mặc định sẽ là tên Lớp.\nBạn có chắc chắn?');">
+                    <button type="submit" class="btn btn-warning fw-bold shadow-sm text-dark"><i class="fa-solid fa-wand-magic-sparkles"></i> Tạo tự động TK GVCN</button>
+                </form>
+                
+                <!-- [NÂNG CẤP LÕI]: NÚT TẠO TK SAO ĐỎ -->
+                <form action="/auto_generate_saodo" method="POST" class="d-inline" onsubmit="return confirm('Hệ thống sẽ cấp tài khoản cho toàn bộ Sao Đỏ.\n\nTên đăng nhập: SD + ID (VD: SD1, SD2)\nMật khẩu mặc định: 123456\nBạn có chắc chắn?');">
+                    <button type="submit" class="btn btn-success fw-bold shadow-sm text-white"><i class="fa-solid fa-mobile-screen"></i> Cấp TK App Sao Đỏ</button>
+                </form>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- Form Cấp Tài Khoản Mới -->
+            <div class="col-md-4">
+                <div class="card border-primary" style="border-top: 4px solid #0d6efd !important;">
+                    <div class="card-header bg-white">
+                        <h5 class="fw-bold m-0 text-primary">Cấp Tài Khoản Mới</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="/add_user">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tên đăng nhập:</label>
+                                <input type="text" class="form-control" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Họ và Tên:</label>
+                                <input type="text" class="form-control" name="full_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Mật khẩu:</label>
+                                <input type="password" class="form-control" name="password" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Quyền hạn:</label>
+                                <select class="form-select" name="role">
+                                    <option value="Ban Chấp Hành">Ban Chấp Hành</option>
+                                    <option value="Giáo viên chủ nhiệm">Giáo viên chủ nhiệm</option>
+                                    <option value="Sao đỏ">Sao đỏ</option>
+                                    <option value="Bí thư">Bí thư</option>
+                                    <option value="Ban Giám hiệu">Ban Giám hiệu</option> <!-- [MỚI]: Thêm quyền BGH -->
+                                    <option value="Quản trị viên">Quản trị viên</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="fa-solid fa-plus"></i> Tạo Tài Khoản</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh Sách Tài Khoản -->
+            <div class="col-md-8">
+                <!-- Form bao bọc toàn bộ bảng để gửi dữ liệu hàng loạt -->
+                <form id="bulkUserForm" action="/bulk_user_action" method="POST">
+
+                    <!-- Thanh Công cụ Hàng loạt (Ẩn mặc định, chỉ hiện khi có người được tích chọn) -->
+                    <div class="mb-3 p-3 bg-white border rounded shadow-sm d-flex align-items-center gap-3" id="bulkActions" style="display: none !important;">
+                        <div class="text-primary fw-bold">
+                            <i class="fa-solid fa-user-check me-1"></i> Đã chọn: <span id="selectedCount" class="fs-5 text-danger">0</span> tài khoản
+                        </div>
+                        <div class="ms-auto d-flex gap-2">
+                            <!-- Nút Khóa/Mở khóa -->
+                            <button type="submit" name="action" value="toggle_lock" class="btn btn-warning fw-bold text-dark shadow-sm" onclick="return confirm('Bạn có chắc muốn Khóa/Mở khóa các tài khoản đã chọn?')">
+                                <i class="fa-solid fa-lock"></i> Đổi Trạng Thái
+                            </button>
+                            <!-- Nút Xóa -->
+                            <button type="submit" name="action" value="delete" class="btn btn-danger fw-bold shadow-sm" onclick="return confirm('CẢNH BÁO MỨC ĐỎ: Bạn có chắc chắn muốn xóa VĨNH VIỄN các tài khoản này? Thao tác này không thể hoàn tác!')">
+                                <i class="fa-solid fa-trash-can"></i> Xóa Hàng Loạt
+                            </button>
+                        </div>
+                    </div>
+
+					<div class="card">
+                        <div class="card-body p-0">
+                            <!-- THÊM THẺ DIV NÀY ĐỂ BỌC BẢNG -->
+                            <div class="table-container">
+                                <table class="table table-hover table-bordered m-0">
+                                    <thead>
+                                        <tr>
+                                            <!-- Checkbox Chọn tất cả -->
+                                            <th style="width: 40px;" class="text-center">
+                                                <input class="form-check-input" type="checkbox" id="selectAllUsers" style="cursor: pointer; transform: scale(1.2);">
+                                            </th>
+                                            <th style="width: 5%">ID</th>
+                                            <th>Tên đăng nhập</th>
+                                            <th>Họ và Tên</th>
+                                            <th>Phân quyền</th>
+                                            <th>Trạng thái</th>
+                                            <th style="width: 25%">Thao tác</th>
+                                        </tr>
+                                </thead>
+                                <tbody>
+                                    {% for u in users %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <!-- Checkbox cá nhân. Nếu là admin tối cao thì vô hiệu hóa (disabled) -->
+                                            <input class="form-check-input user-checkbox" type="checkbox" name="user_ids" value="{{ u.id }}" 
+                                                   {% if u.username.lower() == 'admin' %} disabled {% endif %} 
+                                                   style="cursor: pointer; transform: scale(1.2);">
+                                        </td>
+                                        <td class="fw-bold text-muted">{{ u.id }}</td>
+                                        <td class="fw-bold text-primary">{{ u.username }}</td>
+                                        <td>{{ u.full_name }}</td>
+                                        <td>
+                                            <!-- Tùy chỉnh màu sắc Badge theo phân quyền -->
+                                            {% if u.role.value == 'Giáo viên chủ nhiệm' %}
+                                                <span class="badge bg-info text-dark">{{ u.role.value }}</span>
+                                            {% elif u.role.value == 'Sao đỏ' %}
+                                                <span class="badge bg-success">{{ u.role.value }}</span>
+                                            {% elif u.role.value == 'Ban Giám hiệu' %}
+                                                <span class="badge bg-primary text-white">{{ u.role.value }}</span> <!-- [MỚI]: Badge cho BGH -->
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ u.role.value }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if u.is_active %}
+                                                <span class="badge bg-success"><i class="fa-solid fa-circle-check"></i> Hoạt động</span>
+                                            {% else %}
+                                                <span class="badge bg-danger"><i class="fa-solid fa-lock"></i> Đã khóa</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 justify-content-center">
+                                                <!-- Nút Sửa -->
+                                                <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#editModal{{ u.id }}" title="Chỉnh sửa">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                
+                                                <!-- Nút Khóa/Mở -->
+                                                <button type="submit" formaction="/toggle_user/{{ u.id }}" formmethod="POST" class="btn btn-sm {% if u.is_active %}btn-secondary{% else %}btn-success{% endif %} fw-bold" {% if u.username.lower() == 'admin' %}disabled{% endif %} title="Khóa/Mở khóa">
+                                                    <i class="fa-solid {% if u.is_active %}fa-lock{% else %}fa-unlock{% endif %}"></i>
+                                                </button>
+                                                
+                                                <!-- Nút Xóa -->
+                                                <button type="submit" formaction="/delete_user/{{ u.id }}" formmethod="POST" onclick="return confirm('Xóa vĩnh viễn tài khoản {{ u.username }}? Hành động này không thể hoàn tác!');" class="btn btn-sm btn-danger fw-bold" {% if u.username.lower() == 'admin' %}disabled{% endif %} title="Xóa tài khoản">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+
+                                            <!-- Modal Chỉnh Sửa Tài Khoản -->
+                                            <div class="modal fade" id="editModal{{ u.id }}" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content text-start">
+                                                        <div class="modal-header bg-warning">
+                                                            <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa: {{ u.username }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Tên đăng nhập mới:</label>
+                                                                <input type="text" class="form-control border-secondary" name="edit_username" value="{{ u.username }}" form="editForm{{u.id}}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Họ và Tên mới:</label>
+                                                                <input type="text" class="form-control border-secondary" name="edit_fullname" value="{{ u.full_name }}" form="editForm{{u.id}}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Mật khẩu mới:</label>
+                                                                <input type="password" class="form-control border-secondary" name="edit_password" placeholder="Bỏ trống nếu giữ nguyên mật khẩu cũ" form="editForm{{u.id}}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Quyền hạn:</label>
+                                                                <select class="form-select border-secondary" name="edit_role" form="editForm{{u.id}}">
+                                                                    <option value="Ban Chấp Hành" {% if u.role.value == 'Ban Chấp Hành' %}selected{% endif %}>Ban Chấp Hành</option>
+                                                                    <option value="Giáo viên chủ nhiệm" {% if u.role.value == 'Giáo viên chủ nhiệm' %}selected{% endif %}>Giáo viên chủ nhiệm</option>
+                                                                    <option value="Sao đỏ" {% if u.role.value == 'Sao đỏ' %}selected{% endif %}>Sao đỏ</option>
+                                                                    <option value="Bí thư" {% if u.role.value == 'Bí thư' %}selected{% endif %}>Bí thư</option>
+                                                                    <option value="Ban Giám hiệu" {% if u.role.value == 'Ban Giám hiệu' %}selected{% endif %}>Ban Giám hiệu</option> <!-- [MỚI]: Thêm trong Modal -->
+                                                                    <option value="Quản trị viên" {% if u.role.value == 'Quản trị viên' %}selected{% endif %}>Quản trị viên</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Hủy</button>
+                                                            <form id="editForm{{u.id}}" method="POST" action="/edit_user/{{ u.id }}" class="m-0">
+                                                                <button type="submit" class="btn btn-warning fw-bold text-dark"><i class="fa-solid fa-floppy-disk"></i> Cập nhật</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const selectAllBtn = document.getElementById('selectAllUsers');
+            const userCheckboxes = document.querySelectorAll('.user-checkbox:not([disabled])');
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCountSpan = document.getElementById('selectedCount');
+    
+            function updateBulkActionsVisibility() {
+                let checkedCount = 0;
+                userCheckboxes.forEach(cb => { if(cb.checked) checkedCount++; });
+                
+                selectedCountSpan.textContent = checkedCount;
+                
+                if(checkedCount > 0) {
+                    bulkActions.style.setProperty('display', 'flex', 'important');
+                } else {
+                    bulkActions.style.setProperty('display', 'none', 'important');
+                    if(selectAllBtn) selectAllBtn.checked = false;
+                }
+            }
+    
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('change', function() {
+                    userCheckboxes.forEach(cb => { cb.checked = selectAllBtn.checked; });
+                    updateBulkActionsVisibility();
+                });
+            }
+    
+            userCheckboxes.forEach(cb => {
+                cb.addEventListener('change', updateBulkActionsVisibility);
+            });
+        });
+    </script>
+</body>
+</html>
